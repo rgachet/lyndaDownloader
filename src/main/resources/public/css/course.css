@@ -1,0 +1,8 @@
+#video {
+    float: left;
+    clear: right;
+}
+
+.fixed {
+    position: fixed;
+}

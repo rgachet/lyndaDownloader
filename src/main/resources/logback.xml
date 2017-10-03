@@ -1,0 +1,4 @@
+<configuration>
+    <logger name="org.apache" level="INFO" />
+    <logger name="httpclient" level="INFO" />
+</configuration>

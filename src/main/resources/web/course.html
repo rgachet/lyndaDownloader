@@ -1,0 +1,60 @@
+@args org.elrudaille.courses.model.Course course
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="/css/course.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <title>@course.getTitre()@</title>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row col-lg-4" >
+        <h2>@course.getTitre()@</h2>
+        <div class="list-group">
+            @for(org.elrudaille.courses.model.Chapter chapter: course.getChapitres())
+            {
+                <a class="list-group-item list-group-item-info"><h4>@chapter.getTitre()@</h4></a>
+                <div class="list-group">
+                    @for(org.elrudaille.courses.model.Lesson lesson: chapter.getLessons())
+                    {
+                        <a class="list-group-item" href="javascript:getVideoPath(@lesson.getVideoId()@);"><p class="list-group-item-heading">@lesson.getTitle()@</p></a>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+    <div id="video" class="row col-lg-7">
+        <video height="480" width="720" controls>
+            <source id="videoSource" src="" type="video/mp4">
+        </video>
+    </div>
+</div>
+
+    <script>
+        function getVideoPath(videoId) {
+			$('#videoSource').attr('src', '/video?courseId=@course.getId()@&videoId='+videoId);
+			$("#video video")[0].load();
+			$("#video video")[0].play();
+		}
+
+		var $video = $("#video"), $window = $(window), offset = $video.offset();
+
+
+		$window.scroll(function() {
+            var scrollTop = $window.scrollTop();
+            console.log(scrollTop);
+            if ($window.scrollTop() > offset.top) {
+                $video.addClass('fixed');
+                $("#video").offset({ top: scrollTop})
+            } else {
+                $video.removeClass('fixed');
+            }
+        });
+    </script>
+
+</body>
+</html>
