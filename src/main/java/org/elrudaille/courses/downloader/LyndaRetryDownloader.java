@@ -23,27 +23,12 @@ public class LyndaRetryDownloader {
 	private static Logger logger = Logger.getLogger(LyndaRetryDownloader.class.getName());
 
 	public static void main(String[] args) throws IOException {
-	    boolean forceAll = true; // tout vérifier
         String baseOutputDirectory = ConfigUtil.getBaseDirectory();
         File[] courseDirectories = new File(baseOutputDirectory).listFiles(File::isDirectory);
         Set<Integer> coursesToRetry = new HashSet<>();
         for(File courseDirectory : courseDirectories){
-            if(forceAll) {
-                if (!courseDirectory.getName().startsWith("L"))
-                    coursesToRetry.add(Integer.valueOf(courseDirectory.getName()));
-            }else {
-                File[] videos =courseDirectory.listFiles(File::isFile);
-                for(File video : videos){
-                    if(video.getName().endsWith(".mp4")){
-                        if(video.length() < 2000) {
-                            logger.error(String.format("%s/%s: Taille suspecte", courseDirectory.getName(), video.getName()));
-                            coursesToRetry.add(Integer.valueOf(courseDirectory.getName()));
-                            if(!video.delete())
-                                logger.error("Suppression impossible");
-                        }
-                    }
-                }
-            }
+            if (!courseDirectory.getName().startsWith("L"))
+                coursesToRetry.add(Integer.valueOf(courseDirectory.getName()));
         }
         if(!coursesToRetry.isEmpty()) {
             LyndaSignIn signIn = new LyndaSignIn();

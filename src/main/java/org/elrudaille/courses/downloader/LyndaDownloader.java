@@ -3,6 +3,7 @@ package org.elrudaille.courses.downloader;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.GetRequest;
+import com.xuggle.xuggler.IContainer;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.elrudaille.courses.LyndaSignIn;
@@ -18,7 +19,6 @@ import org.json.JSONObject;
 import java.io.*;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
 
 public class LyndaDownloader {
 
@@ -64,10 +64,10 @@ public class LyndaDownloader {
                     if(video.getResolution() == 720 && "mp4".equals(video.getExtension())) {
                         if(video.getUrl() != null) {
                             try {
-                                copy("LESSON", video.getUrl(), output, lesson.getVideoId(), "");
+                                copy("LESSON", video.getUrl(), output, lesson.getVideoId(), lesson.getDuration(),  "");
                                 if (!output.exists() || output.length()<2000) {
                                     logger.error("Error downloading from URL, trying with another JSON call");
-                                    getVideoFromJson(output, course, lesson, true);
+                                    getVideoFromJson(output, course, lesson);
                                 }
                             } catch (IOException |UnirestException e) {
                                 try {
@@ -91,10 +91,6 @@ public class LyndaDownloader {
     }
 
     private void getVideoFromJson(File outputVideo, Course course, Lesson lesson) throws IOException {
-        getVideoFromJson(outputVideo, course, lesson, false);
-    }
-
-    private void getVideoFromJson(File outputVideo, Course course, Lesson lesson, Boolean overwrite) throws IOException {
         String urlCourse = String.format("https://www.lynda.com/ajax/course/%s/%s/play",course.getId(), lesson.getVideoId());
         GetRequest getRequest = Unirest.get(urlCourse);
         try {
@@ -106,7 +102,7 @@ public class LyndaDownloader {
                     HashMap type = (HashMap) typeO;
                     if (type.get("name").equals("EDGECAST")) {
                         String videoUrl = (String) ((HashMap) type.get("urls")).get("720");
-                        copy("EDGECAST", videoUrl, outputVideo, lesson.getVideoId(), urlCourse, overwrite);
+                        copy("EDGECAST", videoUrl, outputVideo, lesson.getVideoId(), lesson.getDuration(), urlCourse);
                     }
                 }
             }
@@ -117,20 +113,35 @@ public class LyndaDownloader {
             logger.error(e.getMessage());
         }
     }
-    private void copy(String prefix, String videoUrl, File output, Integer lessonId, String urlJson) throws IOException, UnirestException {
-        copy(prefix, videoUrl, output, lessonId, urlJson, false);
-    }
-    private void copy(String prefix, String videoUrl, File output, Integer lessonId, String urlJson, Boolean overwrite) throws IOException, UnirestException {
-        if(output.exists() && !overwrite)
-            logger.debug("Already downloaded");
-        else {
+
+    private void copy(String prefix, String videoUrl, File output, Integer lessonId, Integer duration, String urlJson) throws IOException, UnirestException {
+	    boolean download = true;
+        if(output.exists()) {
+            download = !expectDuration(output, duration);
+        }
+        if(download) {
             logger.info(String.format("\t[%s] [%s] [%s] Trying to get %s", prefix, lessonId, urlJson, videoUrl));
             InputStream inputStream = Unirest.get(videoUrl).asBinary().getBody();
             OutputStream outputStream = new FileOutputStream(output);
             IOUtils.copy(inputStream, outputStream);
             IOUtils.closeQuietly(inputStream);
             IOUtils.closeQuietly(outputStream);
-            logger.debug("\tDownload successful");
+            if(!expectDuration(output, duration))
+                logger.error("Problem while downloading video, duration does not fit with expected one...");
+            else
+                logger.debug("\tDownload successful");
+        }
+    }
+
+    private boolean expectDuration(File output, Integer duration) {
+        IContainer container = IContainer.make();
+        container.open(output.getAbsolutePath(), IContainer.Type.READ, null);
+        long savedVideoDuration = container.getDuration();
+        if(savedVideoDuration/1000000 < duration-1){
+            return false;
+        }
+        else {
+            return true;
         }
     }
 }

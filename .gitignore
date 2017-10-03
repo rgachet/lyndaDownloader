@@ -1,0 +1,5 @@
+target
+.idea
+lyndaParser.iml
+src/main/resources/course.properties
+src/main/resources/log4j.properties
